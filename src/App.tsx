@@ -1,6 +1,4 @@
 import {useEffect, useState} from 'react';
-import {AnimatePresence, motion} from 'framer-motion';
-import html2canvas from 'html2canvas';
 import {useTranslation} from 'react-i18next';
 import Card from '@/components/Card';
 import {QUESTIONS, RESULTS} from '@/data';
@@ -10,11 +8,12 @@ export default function App() {
   const [step, setStep] = useState<number>(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [sharedIndex, setSharedIndex] = useState<number | null>(null);
+  const currentLang = i18n.language.split('-')[0];
 
   // Detect deep link and language
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const lang = params.get('lng') || 'bg';
+    const lang = params.get('lng') || 'en';
     i18n.changeLanguage(lang);
 
     if (window.location.pathname.startsWith('/r/')) {
@@ -39,6 +38,7 @@ export default function App() {
     const el = document.getElementById('share-card');
     if (!el) return;
 
+    const {default: html2canvas} = await import('html2canvas');
     const canvas = await html2canvas(el, {scale: 3});
     const a = document.createElement('a');
     a.href = canvas.toDataURL('image/png');
@@ -65,55 +65,48 @@ export default function App() {
             <button
               key={lng}
               onClick={() => i18n.changeLanguage(lng)}
-              className='px-2 py-1 border rounded'
+              className={`px-2 py-1 rounded text-xs border ${
+                currentLang === lng
+                  ? 'bg-white text-black border-white'
+                  : 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+              }`}
             >
               {lng.toUpperCase()}
             </button>
           ))}
         </div>
 
-        <AnimatePresence mode='wait'>
-          {step < QUESTIONS.length ? (
-            <motion.div
-              key={step}
-              initial={{opacity: 0, y: 20}}
-              animate={{opacity: 1, y: 0}}
-              exit={{opacity: 0, y: -20}}
-            >
-              <h2 className='text-xl mb-6'>{t(`questions.${step}`)}</h2>
-              <div className='grid gap-4'>
-                {(t(`options.${step}`, {returnObjects: true}) as string[]).map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => handleAnswer(option)}
-                    className='border border-neutral-700 rounded-xl py-4 hover:bg-neutral-800'
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key='result'
-              initial={{opacity: 0, scale: 0.95}}
-              animate={{opacity: 1, scale: 1}}
-            >
-              <Card result={result} />
-              <div className='flex justify-center gap-4'>
-                <button onClick={shareImage} className='bg-white text-black px-4 py-2 rounded-xl'>
-                  {t('share')}
-                </button>
+        {step < QUESTIONS.length ? (
+          <div key={step} className='space-y-6'>
+            <h2 className='text-xl'>{t(`questions.${step}`)}</h2>
+            <div className='grid gap-4'>
+              {(t(`options.${step}`, {returnObjects: true}) as string[]).map((option) => (
                 <button
-                  onClick={() => window.location.replace('/')}
-                  className='border border-neutral-700 px-4 py-2 rounded-xl'
+                  key={option}
+                  onClick={() => handleAnswer(option)}
+                  className='border border-neutral-700 rounded-xl py-4 hover:bg-neutral-800 transition-colors'
                 >
-                  {t('tryAgain')}
+                  {option}
                 </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className='space-y-6'>
+            <Card result={result} />
+            <div className='flex justify-center gap-4'>
+              <button onClick={shareImage} className='bg-white text-black px-4 py-2 rounded-xl'>
+                {t('share')}
+              </button>
+              <button
+                onClick={() => window.location.replace('/')}
+                className='border border-neutral-700 px-4 py-2 rounded-xl'
+              >
+                {t('tryAgain')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
