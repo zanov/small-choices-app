@@ -15,7 +15,7 @@ export default function Card({result}: CardProps) {
         <div className='italic opacity-80 mb-6'>{result.subtitle}</div>
         <p className='text-xl'>{result.text}</p>
       </div>
-      <div className='text-sm opacity-60'>smallchoices.app</div>
+      <div className='text-sm opacity-60'>SmallChoices.app</div>
     </div>
   );
 }
