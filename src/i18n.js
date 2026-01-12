@@ -20,6 +20,18 @@ const resources = {
       share: 'Share',
       tryAgain: 'Try Again',
       footer: 'smallchoices.app',
+      results: {
+        'tihiqt-dalbok': {
+          title: 'The Quiet Deep',
+          subtitle: 'Calm is not escape, it is a choice.',
+          text: 'You seek silence to hear yourself.',
+        },
+        'budniqt-nabliudatel': {
+          title: 'The Wakeful Observer',
+          subtitle: 'You see more than you say.',
+          text: 'While others rush, you understand.',
+        },
+      },
     },
   },
   bg: {
@@ -39,6 +51,18 @@ const resources = {
       share: 'Сподели',
       tryAgain: 'Опитай пак',
       footer: 'smallchoices.app',
+      results: {
+        'tihiqt-dalbok': {
+          title: 'Тихият дълбок',
+          subtitle: 'Спокойствието не е бягство, а избор.',
+          text: 'Ти търсиш тишината, за да чуеш себе си.',
+        },
+        'budniqt-nabliudatel': {
+          title: 'Будният наблюдател',
+          subtitle: 'Виждаш повече, отколкото казваш.',
+          text: 'Докато другите бързат, ти разбираш.',
+        },
+      },
     },
   },
   es: {
@@ -58,6 +82,18 @@ const resources = {
       share: 'Compartir',
       tryAgain: 'Intentar de nuevo',
       footer: 'smallchoices.app',
+      results: {
+        'tihiqt-dalbok': {
+          title: 'El Silencioso Profundo',
+          subtitle: 'La calma no es fuga, es elección.',
+          text: 'Buscas el silencio para escucharte.',
+        },
+        'budniqt-nabliudatel': {
+          title: 'El Observador Despierto',
+          subtitle: 'Ves más de lo que dices.',
+          text: 'Mientras otros corren, tú comprendes.',
+        },
+      },
     },
   },
 };

@@ -33,6 +33,12 @@ export default function App() {
 
   const resultIndex = sharedIndex ?? answers.length % RESULTS.length;
   const result = RESULTS[resultIndex];
+  const localizedResult = {
+    ...result,
+    title: t(`results.${result.slug}.title`) || result.title,
+    subtitle: t(`results.${result.slug}.subtitle`) || result.subtitle,
+    text: t(`results.${result.slug}.text`) || result.text,
+  };
 
   const shareImage = async (): Promise<void> => {
     const el = document.getElementById('share-card');
@@ -93,7 +99,7 @@ export default function App() {
           </div>
         ) : (
           <div className='space-y-6'>
-            <Card result={result} />
+            <Card result={localizedResult} />
             <div className='flex justify-center gap-4'>
               <button onClick={shareImage} className='bg-white text-black px-4 py-2 rounded-xl'>
                 {t('share')}
