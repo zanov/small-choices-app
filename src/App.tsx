@@ -40,16 +40,16 @@ export default function App() {
     text: t(`results.${result.slug}.text`) || result.text,
   };
 
-  const shareImage = async (): Promise<void> => {
+  const buildShareImage = async (): Promise<{dataUrl: string; blob: Blob | null}> => {
     const el = document.getElementById('share-card');
-    if (!el) return;
+    if (!el) return {dataUrl: '', blob: null};
 
     const {default: html2canvas} = await import('html2canvas');
     const canvas = await html2canvas(el, {scale: 3});
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
-    a.download = 'my-result.png';
-    a.click();
+    const dataUrl = canvas.toDataURL('image/png');
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), 'image/png'),
+    );
 
     const url = new URL(window.location.href);
     url.pathname = `/r/${result.slug}`;
@@ -60,6 +60,45 @@ export default function App() {
       await fetch(`/api/share?slug=${result.slug}&lng=${i18n.language}`);
     } catch (err) {
       console.error(err);
+    }
+
+    return {dataUrl, blob};
+  };
+
+  const downloadImage = async (): Promise<void> => {
+    const {dataUrl} = await buildShareImage();
+    if (!dataUrl) return;
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'my-result.png';
+    a.click();
+  };
+
+  const shareImage = async (): Promise<void> => {
+    const {dataUrl, blob} = await buildShareImage();
+    const file = blob ? new File([blob], 'my-result.png', {type: 'image/png'}) : null;
+    const shareData: ShareData = {
+      title: localizedResult.title,
+      text: localizedResult.subtitle,
+      url: window.location.href,
+      files: file ? [file] : undefined,
+    };
+
+    if (file && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Fallback: open the image in a new tab so the user can post manually (e.g., IG/FB).
+    const w = window.open();
+    if (w && dataUrl) {
+      w.document.write(`<img src="${dataUrl}" alt="result" />`);
+    } else if (dataUrl) {
+      window.location.href = dataUrl;
     }
   };
 
@@ -103,6 +142,12 @@ export default function App() {
             <div className='flex justify-center gap-4'>
               <button onClick={shareImage} className='bg-white text-black px-4 py-2 rounded-xl'>
                 {t('share')}
+              </button>
+              <button
+                onClick={downloadImage}
+                className='border border-neutral-700 px-4 py-2 rounded-xl'
+              >
+                 {t('download')}
               </button>
               <button
                 onClick={() => window.location.replace('/')}
