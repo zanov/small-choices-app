@@ -34,7 +34,7 @@ describe('Card', () => {
 
   it('displays footer text', () => {
     render(<Card result={mockResult} />);
-    expect(screen.getByText('smallchoices.app')).toBeDefined();
+    expect(screen.getByText('SmallChoices.app')).toBeDefined();
   });
 
   it('renders with different result data', () => {

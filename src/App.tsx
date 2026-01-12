@@ -1,162 +1,42 @@
-import {useEffect, useState} from 'react';
-import {useTranslation} from 'react-i18next';
 import Card from '@/components/Card';
-import {QUESTIONS, RESULTS} from '@/data';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import QuestionCard from '@/components/QuestionCard';
+import ResultActions from '@/components/ResultActions';
+import {useQuiz} from '@/hooks/useQuiz';
+import {useShareImage} from '@/hooks/useShareImage';
 
 export default function App() {
-  const {t, i18n} = useTranslation();
-  const [step, setStep] = useState<number>(0);
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [sharedIndex, setSharedIndex] = useState<number | null>(null);
-  const currentLang = i18n.language.split('-')[0];
+  const {step, isComplete, localizedResult, handleAnswer} = useQuiz();
+  const {shareImage, downloadImage} = useShareImage();
 
-  // Detect deep link and language
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const lang = params.get('lng') || 'en';
-    i18n.changeLanguage(lang);
-
-    if (window.location.pathname.startsWith('/r/')) {
-      const slug = window.location.pathname.replace('/r/', '');
-      const index = RESULTS.findIndex((r) => r.slug === slug);
-      if (index !== -1) {
-        setSharedIndex(index);
-        setStep(QUESTIONS.length);
-      }
-    }
-  }, []);
-
-  const handleAnswer = (value: string) => {
-    setAnswers((prev) => [...prev, value]);
-    setStep((prev) => prev + 1);
+  const handleShare = async () => {
+    await shareImage(localizedResult);
   };
 
-  const resultIndex = sharedIndex ?? answers.length % RESULTS.length;
-  const result = RESULTS[resultIndex];
-  const localizedResult = {
-    ...result,
-    title: t(`results.${result.slug}.title`) || result.title,
-    subtitle: t(`results.${result.slug}.subtitle`) || result.subtitle,
-    text: t(`results.${result.slug}.text`) || result.text,
+  const handleDownload = async () => {
+    await downloadImage(localizedResult);
   };
 
-  const buildShareImage = async (): Promise<{dataUrl: string; blob: Blob | null}> => {
-    const el = document.getElementById('share-card');
-    if (!el) return {dataUrl: '', blob: null};
-
-    const {default: html2canvas} = await import('html2canvas');
-    const canvas = await html2canvas(el, {scale: 3});
-    const dataUrl = canvas.toDataURL('image/png');
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob((b) => resolve(b), 'image/png'),
-    );
-
-    const url = new URL(window.location.href);
-    url.pathname = `/r/${result.slug}`;
-    url.searchParams.set('lng', i18n.language);
-    window.history.replaceState({}, '', url.toString());
-
-    try {
-      await fetch(`/api/share?slug=${result.slug}&lng=${i18n.language}`);
-    } catch (err) {
-      console.error(err);
-    }
-
-    return {dataUrl, blob};
-  };
-
-  const downloadImage = async (): Promise<void> => {
-    const {dataUrl} = await buildShareImage();
-    if (!dataUrl) return;
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = 'my-result.png';
-    a.click();
-  };
-
-  const shareImage = async (): Promise<void> => {
-    const {dataUrl, blob} = await buildShareImage();
-    const file = blob ? new File([blob], 'my-result.png', {type: 'image/png'}) : null;
-    const shareData: ShareData = {
-      title: localizedResult.title,
-      text: localizedResult.subtitle,
-      url: window.location.href,
-      files: file ? [file] : undefined,
-    };
-
-    if (file && navigator.canShare?.(shareData)) {
-      try {
-        await navigator.share(shareData);
-        return;
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    // Fallback: open the image in a new tab so the user can post manually (e.g., IG/FB).
-    const w = window.open();
-    if (w && dataUrl) {
-      w.document.write(`<img src="${dataUrl}" alt="result" />`);
-    } else if (dataUrl) {
-      window.location.href = dataUrl;
-    }
+  const handleTryAgain = () => {
+    window.location.replace('/');
   };
 
   return (
     <div className='min-h-screen flex items-center justify-center bg-neutral-950 text-white p-4'>
       <div className='w-full max-w-md text-center'>
-        <div className='flex justify-end gap-2 mb-4'>
-          {['en', 'bg', 'es'].map((lng) => (
-            <button
-              key={lng}
-              onClick={() => i18n.changeLanguage(lng)}
-              className={`px-2 py-1 rounded text-xs border ${
-                currentLang === lng
-                  ? 'bg-white text-black border-white'
-                  : 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
-              }`}
-            >
-              {lng.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        <LanguageSwitcher />
 
-        {step < QUESTIONS.length ? (
-          <div key={step} className='space-y-6'>
-            <h2 className='text-xl'>{t(`questions.${step}`)}</h2>
-            <div className='grid gap-4'>
-              {(t(`options.${step}`, {returnObjects: true}) as string[]).map((option) => (
-                <button
-                  key={option}
-                  onClick={() => handleAnswer(option)}
-                  className='border border-neutral-700 rounded-xl py-4 hover:bg-neutral-800 transition-colors'
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
+        {isComplete ? (
           <div className='space-y-6'>
             <Card result={localizedResult} />
-            <div className='flex justify-center gap-4'>
-              <button onClick={shareImage} className='bg-white text-black px-4 py-2 rounded-xl'>
-                {t('share')}
-              </button>
-              <button
-                onClick={downloadImage}
-                className='border border-neutral-700 px-4 py-2 rounded-xl'
-              >
-                 {t('download')}
-              </button>
-              <button
-                onClick={() => window.location.replace('/')}
-                className='border border-neutral-700 px-4 py-2 rounded-xl'
-              >
-                {t('tryAgain')}
-              </button>
-            </div>
+            <ResultActions
+              onShare={handleShare}
+              onDownload={handleDownload}
+              onTryAgain={handleTryAgain}
+            />
           </div>
+        ) : (
+          <QuestionCard step={step} onAnswer={handleAnswer} />
         )}
       </div>
     </div>
